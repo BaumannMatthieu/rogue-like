@@ -76,6 +76,11 @@ class Carte
 			}
 		}
 
+		vector< vector< Tile > > getTiles() const
+		{
+			return tiles;
+		}
+
 		void setTile(const unsigned int i, const unsigned int j, const Tile tile)
 		{
 			tiles[i][j] = tile;

@@ -101,6 +101,20 @@ void editerCaseCollision(Carte* carte, Curseur* curseur_map, Carte* carte_collis
 	}
 }
 
+
+void afficher(const Carte* carte)
+{
+	vector< vector< Tile > > tiles = carte->getTiles();
+
+	for(unsigned int i = 0; i < tiles.size(); i++) {
+		for(unsigned int j = 0; j < tiles[i].size(); j++) {
+			cout << tiles[i][j].getIdTile() << " " << tiles[i][j].getCollision() <<  " | ";
+		}
+		cout << endl;
+	}
+	cout << endl;
+}
+
 int main(int argc, char **argv)
 {     
 	// Notre fenêtre        
@@ -203,7 +217,10 @@ int main(int argc, char **argv)
 					} else if(event.key.keysym.sym == SDLK_d) {
 						carte.deplacer(RIGHT);
 						carte_collision.deplacer(RIGHT);
+					} else if(event.key.keysym.sym == SDLK_a) {
+						afficher(&carte);
 					}
+
             			break;
 				case SDL_MOUSEMOTION:
 					curseur_map.deplacer(curseur_map_pos_x, curseur_map_pos_y);
