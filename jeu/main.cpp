@@ -128,7 +128,9 @@ Carte* lecture_carte(const std::string& chemin_carte, SDL_Renderer* renderer)
 		std::vector< char > collision_tile(4, 0);
 		for(unsigned int j = 0; j < collision_tile.size(); j++) {
 			buffer_collisions >> collision_tile[j];
+			cout << collision_tile[j] << " ";
 		}
+		cout << endl;
 		collision_tiles.push_back(collision_tile);
 	}
 	
@@ -174,14 +176,17 @@ bool collisionEntityEnvironnement(Personnage* entite, Carte* carte, const direct
 
 	struct Tile_map tile_suivante_map = convertPositionToTile(carte, pos_suivante[dir]);
 	struct Tile_map tile_actu_map = convertPositionToTile(carte, pos_feet);	
-	
+	cout << "ok" << endl;
+
 	if( tile_actu_map.id_ligne != tile_suivante_map.id_ligne or tile_actu_map.id_colonne != tile_suivante_map.id_colonne )
 	{
-		if(tile_actu_map.tile.getCollisions()[dir])
+		if(tile_actu_map.tile.getCollisions()[dir] == 1)
 			return false;
-
+		
+		cout << "ok1" << endl;
 		return true;
 	}
+	cout << "ok2" << endl;
 
 	return true;
 }

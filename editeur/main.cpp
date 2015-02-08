@@ -108,7 +108,7 @@ void afficher(const Carte* carte)
 
 	for(unsigned int i = 0; i < tiles.size(); i++) {
 		for(unsigned int j = 0; j < tiles[i].size(); j++) {
-			cout << tiles[i][j].getIdTile() << " " << tiles[i][j].getCollision() << " ";
+			cout << tiles[i][j].getIdTile() << " ";
 		}
 		cout << endl;
 	}
