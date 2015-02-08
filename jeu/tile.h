@@ -7,7 +7,7 @@
 class Tile
 {
 	public:
-		Tile(const unsigned int _id_tile, const bool _collision)
+		Tile(const unsigned int _id_tile, const std::vector< char > _collision)
 		{
 			collision = _collision;
 			id_tile = _id_tile;
@@ -27,17 +27,12 @@ class Tile
 			id_tile = _id_tile;
 		}
 
-		void inverserCollision()
-		{
-			collision = !collision;
-		}
-
-		bool getCollision()
+		std::vector< char > getCollisions()
 		{
 			return collision;
 		}
 	private:
-		bool collision;
+		std::vector< char > collision;
 		unsigned int id_tile;
 };
 

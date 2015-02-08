@@ -6,7 +6,7 @@ using namespace std;
 class Carte
 {
 	public:
-		Carte(unsigned int** id_tiles, const unsigned int taille_x, const unsigned int taille_y, bool** collision_tiles, const string& file_tileset, SDL_Renderer* renderer) : offset_x(0), offset_y(0)
+		Carte(unsigned int** id_tiles, const unsigned int taille_x, const unsigned int taille_y, vector< vector< char > > collision_tiles, const string& file_tileset, SDL_Renderer* renderer) : offset_x((WINDOW_LARGEUR - TAILLE_MAP_X*LARGEUR_TILE)/2), offset_y((WINDOW_HAUTEUR - TAILLE_MAP_Y*HAUTEUR_TILE)/2)
 		{
 			largeur = taille_x;
 			hauteur = taille_y;
@@ -20,7 +20,7 @@ class Carte
 			for(unsigned int i = 0; i < taille_x; i++) {
 				vector< Tile > tiles_ligne;
 				for(unsigned int j = 0; j < taille_y; j++) {
-					Tile tile_courante(id_tiles[i][j], collision_tiles[i][j]);
+					Tile tile_courante(id_tiles[i][j], collision_tiles[id_tiles[i][j]]);
 					tiles_ligne.push_back(tile_courante);
 				}
 				tiles.push_back(tiles_ligne);
@@ -51,24 +51,24 @@ class Carte
 				}
 			}
 		}
-		void deplacer(const direction dir)
+		void deplacer(const direction dir, const Uint8 vitesse)
 		{
 			switch(dir)
 			{
 				case UP:
 					offset_x += 0;
-					offset_y += HAUTEUR_TILE;		
+					offset_y += vitesse;		
 				break;
 				case DOWN:
 					offset_x += 0;
-					offset_y += -HAUTEUR_TILE;		
+					offset_y += -vitesse;		
 				break;
 				case LEFT:
-					offset_x += LARGEUR_TILE;
+					offset_x += vitesse;
 					offset_y += 0;		
 				break;
 				case RIGHT:
-					offset_x += -LARGEUR_TILE;
+					offset_x += -vitesse;
 					offset_y += 0;		
 				break;
 				default:
