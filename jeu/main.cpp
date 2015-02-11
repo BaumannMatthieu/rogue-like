@@ -156,7 +156,26 @@ struct Tile_map convertPositionToTile(Carte* carte, SDL_Rect pos)
 	return tile_map;
 }
 
-
+direction directionOpposee(const direction dir)
+{
+	switch(dir)
+	{
+		case UP:
+			return DOWN;
+		break;
+		case DOWN:
+			return UP;
+		break;
+		case RIGHT:
+			return LEFT;
+		break;
+		case LEFT:
+			return RIGHT;
+		break;
+		default:
+		break;
+	}
+}
 
 bool collisionEntityEnvironnement(Personnage* entite, Carte* carte, const direction dir)
 {
@@ -176,17 +195,14 @@ bool collisionEntityEnvironnement(Personnage* entite, Carte* carte, const direct
 
 	struct Tile_map tile_suivante_map = convertPositionToTile(carte, pos_suivante[dir]);
 	struct Tile_map tile_actu_map = convertPositionToTile(carte, pos_feet);	
-	cout << "ok" << endl;
-
+	
+	cout << tile_actu_map.tile.getCollisions()[dir] << endl;
 	if( tile_actu_map.id_ligne != tile_suivante_map.id_ligne or tile_actu_map.id_colonne != tile_suivante_map.id_colonne )
 	{
-		if(tile_actu_map.tile.getCollisions()[dir] == 1)
+		if(tile_actu_map.tile.getCollisions()[dir] == '1' or tile_suivante_map.tile.getCollisions()[directionOpposee(dir)] == '1') {
 			return false;
-		
-		cout << "ok1" << endl;
-		return true;
+		}
 	}
-	cout << "ok2" << endl;
 
 	return true;
 }

@@ -11,6 +11,8 @@ enum direction{UP, DOWN, RIGHT, LEFT};
 #include "texture.h"
 #include "tile.h"
 #include "carte.h"
+#include "carte_tileset.h"
+#include "carte_collision.h"
 
 class Curseur
 {
@@ -73,7 +75,7 @@ class Curseur
 		SDL_Rect pos;
 };
 
-void editerCaseTile(Carte* carte, Carte* carte_tileset, Curseur* curseur_map, Curseur* curseur_tileset)
+void editerCaseTile(Carte* carte, Carte_Tileset* carte_tileset, Curseur* curseur_map, Curseur* curseur_tileset)
 {
 	unsigned int i = (-carte->getOffsetX() + curseur_map->getPosition().x)/LARGEUR_TILE;
 	unsigned int j = (-carte->getOffsetY() + curseur_map->getPosition().y)/HAUTEUR_TILE;
@@ -81,23 +83,25 @@ void editerCaseTile(Carte* carte, Carte* carte_tileset, Curseur* curseur_map, Cu
 	unsigned int k = curseur_tileset->getPosition().x/LARGEUR_TILE;
 	unsigned int l = curseur_tileset->getPosition().y/HAUTEUR_TILE;
 
-	if( i >= 0 && i < TAILLE_MAP_X && j >= 0 && j < TAILLE_MAP_Y )
-		carte->setTile(j, i, carte_tileset->getTile(l, k));
+	if( i >= 0 && i < TAILLE_MAP_X && j >= 0 && j < TAILLE_MAP_Y ) {
+		Tile tile_edition = carte_tileset->getTile(l, k);
+		Tile tile_actuelle = carte->getTile(j, i);
+		tile_edition.setCollision(tile_actuelle.getCollision());
+		carte->setTile(j, i, tile_edition);
+	}
 }
 
-void editerCaseCollision(Carte* carte, Curseur* curseur_map, Carte* carte_collision)
+void editerCaseCollision(Carte* carte, Curseur* curseur_map, Carte_Collision* carte_collision, const direction dir)
 {
 	unsigned int i = (-carte->getOffsetX() + curseur_map->getPosition().x)/LARGEUR_TILE;
 	unsigned int j = (-carte->getOffsetY() + curseur_map->getPosition().y)/HAUTEUR_TILE;
 
 	if( i >= 0 && i < TAILLE_MAP_X && j >= 0 && j < TAILLE_MAP_Y ) {
 		Tile tile_carte_actuelle = carte->getTile(j, i);
-		tile_carte_actuelle.inverserCollision();
+		tile_carte_actuelle.inverserCollision(dir);
 		carte->setTile(j, i, tile_carte_actuelle);
 		
-		Tile tile_collision_actuelle = carte_collision->getTile(j, i);
-		tile_collision_actuelle.setIdTile( tile_carte_actuelle.getCollision() ? 1 : 0 );
-		carte_collision->setTile( j, i, tile_collision_actuelle );
+		carte_collision->inverserCollisionDirection(j, i, dir);
 	}
 }
 
@@ -108,7 +112,7 @@ void afficher(const Carte* carte)
 
 	for(unsigned int i = 0; i < tiles.size(); i++) {
 		for(unsigned int j = 0; j < tiles[i].size(); j++) {
-			cout << tiles[i][j].getIdTile() << " ";
+			cout << tiles[i][j].getIdTile() << " " << tiles[i][j].getCollision()[UP] << " " << tiles[i][j].getCollision()[DOWN] << " " << tiles[i][j].getCollision()[RIGHT] << " " << tiles[i][j].getCollision()[LEFT] << " ";
 		}
 		cout << endl;
 	}
@@ -166,17 +170,20 @@ int main(int argc, char **argv)
 	}
 
 	unsigned int **id_tiles_map = new unsigned int*[TAILLE_MAP_Y];
+	std::vector< bool > **collision_tiles_map = new std::vector< bool >*[TAILLE_MAP_Y];	
 
 	for(unsigned int j = 0; j < TAILLE_MAP_Y; j++) {
 		id_tiles_map[j] = new unsigned int[TAILLE_MAP_X];
+		collision_tiles_map[j] = new std::vector< bool >[TAILLE_MAP_X];
 		for(unsigned int i = 0; i < TAILLE_MAP_X; i++) {
 			id_tiles_map[j][i] = 0;
+			collision_tiles_map[j][i].assign(4, false);
 		}
 	}
 
-	Carte carte_tileset(id_tiles, nombre_tiles_hauteur, nombre_tiles_largeur, false, "donjon_tileset.png", renderer);
-	Carte carte(id_tiles_map, TAILLE_MAP_Y, TAILLE_MAP_X, false, "donjon_tileset.png", renderer);
-	Carte carte_collision(id_tiles_map, TAILLE_MAP_Y, TAILLE_MAP_X, false, "collision.png", renderer);
+	Carte_Tileset carte_tileset(id_tiles, nombre_tiles_hauteur, nombre_tiles_largeur, "donjon_tileset.png", renderer);
+	Carte carte(id_tiles_map, TAILLE_MAP_Y, TAILLE_MAP_X, collision_tiles_map, "donjon_tileset.png", renderer);
+	Carte_Collision carte_collision(TAILLE_MAP_Y, TAILLE_MAP_X, collision_tiles_map, "collisions.png", renderer);
 
 	bool continuer = true;
 	while(continuer)
@@ -203,8 +210,14 @@ int main(int argc, char **argv)
 						curseur_tileset.deplacer(RIGHT, tileset.getLargeur(), tileset.getHauteur());
 					} else if(event.key.keysym.sym == SDLK_LEFT) {
 						curseur_tileset.deplacer(LEFT, tileset.getLargeur(), tileset.getHauteur());
-					} else if (event.key.keysym.sym == SDLK_SPACE) {
-						editerCaseCollision(&carte, &curseur_map, &carte_collision);
+					} else if (event.key.keysym.sym == SDLK_o) {
+						editerCaseCollision(&carte, &curseur_map, &carte_collision, UP);
+					} else if (event.key.keysym.sym == SDLK_l) {
+						editerCaseCollision(&carte, &curseur_map, &carte_collision, DOWN);
+					} else if (event.key.keysym.sym == SDLK_k) {
+						editerCaseCollision(&carte, &curseur_map, &carte_collision, LEFT);
+					} else if (event.key.keysym.sym == SDLK_m) {
+						editerCaseCollision(&carte, &curseur_map, &carte_collision, RIGHT);
 					} else if (event.key.keysym.sym == SDLK_z) {
 						carte.deplacer(UP);
 						carte_collision.deplacer(UP);

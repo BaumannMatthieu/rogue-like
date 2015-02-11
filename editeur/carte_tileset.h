@@ -1,12 +1,12 @@
-#ifndef CARTE_H
-#define CARTE_H
+#ifndef __CARTE_TILESET_H__
+#define __CARTE_TILESET_H__
 
 using namespace std;
 
-class Carte
+class Carte_Tileset
 {
 	public:
-		Carte(unsigned int** id_tiles, const unsigned int taille_x, const unsigned int taille_y, std::vector< bool>** collision_tiles, const string& file_tileset, SDL_Renderer* renderer) : offset_x(0), offset_y(0)
+		Carte_Tileset(unsigned int** id_tiles, const unsigned int taille_x, const unsigned int taille_y, const string& file_tileset, SDL_Renderer* renderer)
 		{
 			largeur = taille_x;
 			hauteur = taille_y;
@@ -20,14 +20,14 @@ class Carte
 			for(unsigned int i = 0; i < taille_x; i++) {
 				vector< Tile > tiles_ligne;
 				for(unsigned int j = 0; j < taille_y; j++) {
-					Tile tile_courante(id_tiles[i][j], collision_tiles[i][j]);
+					Tile tile_courante(id_tiles[i][j]);
 					tiles_ligne.push_back(tile_courante);
 				}
 				tiles.push_back(tiles_ligne);
 			}
 		}
 
-		virtual ~Carte() 
+		virtual ~Carte_Tileset() 
 		{
 			delete tileset;
 		}
@@ -42,8 +42,8 @@ class Carte
 					src_tile.w = LARGEUR_TILE;
 					src_tile.h = HAUTEUR_TILE;
 
-					dst_tile.x = offset_x + HAUTEUR_TILE*j;
-					dst_tile.y = offset_y + LARGEUR_TILE*i;
+					dst_tile.x = HAUTEUR_TILE*j;
+					dst_tile.y = LARGEUR_TILE*i;
 					dst_tile.w = LARGEUR_TILE;
 					dst_tile.h = HAUTEUR_TILE;
 
@@ -51,57 +51,16 @@ class Carte
 				}
 			}
 		}
-		void deplacer(const direction dir)
-		{
-			switch(dir)
-			{
-				case UP:
-					offset_x += 0;
-					offset_y += HAUTEUR_TILE;		
-				break;
-				case DOWN:
-					offset_x += 0;
-					offset_y += -HAUTEUR_TILE;		
-				break;
-				case LEFT:
-					offset_x += LARGEUR_TILE;
-					offset_y += 0;		
-				break;
-				case RIGHT:
-					offset_x += -LARGEUR_TILE;
-					offset_y += 0;		
-				break;
-				default:
-				break;
-			}
-		}
-
-		vector< vector< Tile > > getTiles() const
-		{
-			return tiles;
-		}
-
-		void setTile(const unsigned int i, const unsigned int j, const Tile tile)
-		{
-			tiles[i][j] = tile;
-		}
+	
 		Tile getTile(const unsigned int i, const unsigned int j)
 		{
 			return tiles[i][j];
 		}
-		int getOffsetX() const
-		{
-			return offset_x;
-		}
-		int getOffsetY() const
-		{
-			return offset_y;
-		}
+
 	private:
 		std::vector< std::vector< Tile > > tiles;
 		unsigned int largeur, hauteur;
 		unsigned int lig_tileset, col_tileset;
-		int offset_x, offset_y;		
 
 		Texture* tileset;
 };

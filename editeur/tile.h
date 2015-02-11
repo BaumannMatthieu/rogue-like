@@ -1,13 +1,21 @@
-#ifndef TILE_H
-#define TILE_H
+#ifndef __TILE_H__
+#define __TILE_H__
 
 #define LARGEUR_TILE 16
 #define HAUTEUR_TILE 16
 
+using namespace std;
+
 class Tile
 {
 	public:
-		Tile(const unsigned int _id_tile, const bool _collision)
+		Tile(const unsigned int _id_tile)
+		{
+			id_tile = _id_tile;
+			collision.assign(4, false);
+		}
+
+		Tile(const unsigned int _id_tile, const vector< bool > _collision)
 		{
 			collision = _collision;
 			id_tile = _id_tile;
@@ -27,17 +35,22 @@ class Tile
 			id_tile = _id_tile;
 		}
 
-		void inverserCollision()
-		{
-			collision = !collision;
-		}
-
-		bool getCollision()
+		std::vector< bool > getCollision()
 		{
 			return collision;
 		}
+
+		void setCollision(const std::vector< bool > _collision)
+		{
+			collision = _collision;
+		}
+
+		void inverserCollision(const direction dir)
+		{
+			collision[dir] = !collision[dir];
+		}
 	private:
-		bool collision;
+		vector< bool > collision;
 		unsigned int id_tile;
 };
 
