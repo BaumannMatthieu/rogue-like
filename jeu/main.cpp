@@ -20,6 +20,7 @@ enum direction{UP, DOWN, RIGHT, LEFT};
 
 #include "entity.h"
 #include "personnage.h"
+#include "particle_system.h"
 
 class Curseur
 {
@@ -107,31 +108,22 @@ Carte* lecture_carte(const std::string& chemin_carte, SDL_Renderer* renderer)
 	std::string chaine = parser_fichier_texte(chemin_carte);
 
 	unsigned int **id_tiles = new unsigned int*[TAILLE_MAP_Y];
+	vector< char > **collision_tiles = new vector< char >*[TAILLE_MAP_Y];
 	
 	std::stringstream buffer_tiles(chaine);
 	
 	for(unsigned int j = 0; j < TAILLE_MAP_Y; j++) {
 		id_tiles[j] = new unsigned int[TAILLE_MAP_X];
+		collision_tiles[j] = new vector< char >[TAILLE_MAP_X];
 		for(unsigned int i = 0; i < TAILLE_MAP_X; i++) {
 			buffer_tiles >> id_tiles[j][i];
+			for(unsigned int k = 0; k < 4; k++) {
+				char collision_courante;
+				buffer_tiles >> collision_courante;
+
+				collision_tiles[j][i].push_back(collision_courante);
+			}	
 		}
-	}
-	
-	// On parse le fichier de collisions
-	std::string chaine_collision = parser_fichier_texte("collisions_tileset.txt");
-	std::vector< std::vector< char > > collision_tiles;
-		
-	std::stringstream buffer_collisions(chaine_collision);
-	unsigned int taille_tileset;
-	buffer_collisions >> taille_tileset;
-	for(unsigned int i = 0; i < taille_tileset; i++) {
-		std::vector< char > collision_tile(4, 0);
-		for(unsigned int j = 0; j < collision_tile.size(); j++) {
-			buffer_collisions >> collision_tile[j];
-			cout << collision_tile[j] << " ";
-		}
-		cout << endl;
-		collision_tiles.push_back(collision_tile);
 	}
 	
 	return new Carte(id_tiles, TAILLE_MAP_X, TAILLE_MAP_Y, collision_tiles, "donjon_tileset.png", renderer); 
@@ -156,39 +148,43 @@ struct Tile_map convertPositionToTile(Carte* carte, SDL_Rect pos)
 	return tile_map;
 }
 
-direction directionOpposee(const direction dir)
+bool collisionPersonnageEntity(Entite* personnage, Entite* entite)
 {
-	switch(dir)
-	{
-		case UP:
-			return DOWN;
-		break;
-		case DOWN:
-			return UP;
-		break;
-		case RIGHT:
-			return LEFT;
-		break;
-		case LEFT:
-			return RIGHT;
-		break;
-		default:
-		break;
+	if(abs(personnage->getPosition().x - entite->getPosition().x)*2 < personnage->getPosition().w + entite->getPosition().w) {
+		if(abs(personnage->getPosition().y - entite->getPosition().y)*2 < personnage->getPosition().h + entite->getPosition().h) {
+			return true;
+		}
+	}
+
+	return false;
+
+}
+
+// précondition : le joueur a appuyé sur ESPACE
+void detectionCollisionPersonnageEntites(vector< Entite* >& entites, Entite* personnage)
+{
+	// Attaque personnage -> entites
+	for(unsigned int i = 0; i < entites.size(); i++) {
+		if(collisionPersonnageEntity(personnage, entites[i])) {
+			delete entites[i];
+			entites.erase(entites.begin() + i);
+			break;
+		}
 	}
 }
 
-bool collisionEntityEnvironnement(Personnage* entite, Carte* carte, const direction dir)
+bool collisionEntityEnvironnement(Entite* entite, Carte* carte, const direction dir)
 {
 	SDL_Rect pos_feet;
 	pos_feet.x = entite->getPosition().x + LARGEUR_ENTITY/2;
-	pos_feet.y = entite->getPosition().y + HAUTEUR_ENTITY*3/4;
+	pos_feet.y = entite->getPosition().y + HAUTEUR_ENTITY/2;
 
 	SDL_Rect pos_suivante[4];
 	pos_suivante[UP].x = pos_feet.x;	
 	pos_suivante[UP].y = pos_feet.y - entite->getVitesse();	
 	pos_suivante[DOWN].x = pos_feet.x;	
-	pos_suivante[DOWN].y = pos_feet.y + HAUTEUR_ENTITY + entite->getVitesse();	
-	pos_suivante[RIGHT].x = pos_feet.x + LARGEUR_ENTITY + entite->getVitesse();	
+	pos_suivante[DOWN].y = pos_feet.y + entite->getVitesse();	
+	pos_suivante[RIGHT].x = pos_feet.x + entite->getVitesse();	
 	pos_suivante[RIGHT].y = pos_feet.y;	
 	pos_suivante[LEFT].x = pos_feet.x - entite->getVitesse();	
 	pos_suivante[LEFT].y = pos_feet.y;	
@@ -196,15 +192,21 @@ bool collisionEntityEnvironnement(Personnage* entite, Carte* carte, const direct
 	struct Tile_map tile_suivante_map = convertPositionToTile(carte, pos_suivante[dir]);
 	struct Tile_map tile_actu_map = convertPositionToTile(carte, pos_feet);	
 	
-	cout << tile_actu_map.tile.getCollisions()[dir] << endl;
 	if( tile_actu_map.id_ligne != tile_suivante_map.id_ligne or tile_actu_map.id_colonne != tile_suivante_map.id_colonne )
 	{
-		if(tile_actu_map.tile.getCollisions()[dir] == '1' or tile_suivante_map.tile.getCollisions()[directionOpposee(dir)] == '1') {
+		if(tile_actu_map.tile.getCollision()[dir] == '1') {
 			return false;
 		}
 	}
 
 	return true;
+}
+
+void deplacer(const direction dir, vector< Entite* > entites)
+{
+	for(unsigned int i = 0; i < entites.size(); i++) {
+		entites[i]->deplacer(dir);
+	}	
 }
 
 int main(int argc, char **argv)
@@ -222,7 +224,6 @@ int main(int argc, char **argv)
 			 
 		return -1;
 	}
-		 
 		 
 	// Création de la fenêtre
 	fenetre = SDL_CreateWindow("Test SDL 2.0", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_LARGEUR, WINDOW_HAUTEUR, SDL_WINDOW_SHOWN);
@@ -242,7 +243,17 @@ int main(int argc, char **argv)
 
 	Carte* carte = lecture_carte("carte1.txt", renderer);
 	Personnage guerrier(GUERRIER, "entity.png", renderer);
+	vector< Entite* > entites;
+	for(unsigned int i = 0; i < 10; i++) {
+		Ennemi* viking = new Ennemi(VIKING, "entity.png", renderer);
+		entites.push_back(viking);
+	}
+	
+//	ParticleSystem particle_system(2000);
+	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
 	bool continuer = true;
+	bool attaque_melee = true;
 	while(continuer)
 	{
 		SDL_Event event;
@@ -252,52 +263,61 @@ int main(int argc, char **argv)
 			if(event.type == SDL_QUIT) {
 					continuer = false;
 			}
-                         //Traitement de l'événement */
-	                /* switch (event.type)  Quel événement avons-nous ? 
-        	        {
-				case SDL_WINDOWEVENT: // Événement de la fenêtre
-					if (event.window.event == SDL_WINDOWEVENT_CLOSE) { // Fermeture de la fenêtre
-						continuer = false;
-					}
-            			break;
-        			case SDL_KEYDOWN: // Événement de relâchement d'une touche clavier
-					if (event.key.keysym.sym == SDLK_z) {
-						carte->deplacer(UP);
-					} else if(event.key.keysym.sym == SDLK_s) {
-						carte->deplacer(DOWN);
-					} else if(event.key.keysym.sym == SDLK_q) {
-						carte->deplacer(LEFT);
-					} else if(event.key.keysym.sym == SDLK_d) {
-						carte->deplacer(RIGHT);
-					} 
-            			break;
-				break;		
-			}*/
 		}
-			const Uint8 *keys = SDL_GetKeyboardState(NULL);
-			if(keys[SDL_SCANCODE_W] && collisionEntityEnvironnement(&guerrier, carte, UP)) {
-				carte->deplacer(UP, guerrier.getVitesse());
-			}
-
-			if(keys[SDL_SCANCODE_A] && collisionEntityEnvironnement(&guerrier, carte, LEFT)) {
-				carte->deplacer(LEFT, guerrier.getVitesse());
-			}
-
-			if(keys[SDL_SCANCODE_S] && collisionEntityEnvironnement(&guerrier, carte, DOWN)) {
-				carte->deplacer(DOWN, guerrier.getVitesse());
-			}
-
-			if(keys[SDL_SCANCODE_D] && collisionEntityEnvironnement(&guerrier, carte, RIGHT)) {
-				carte->deplacer(RIGHT, guerrier.getVitesse());
-			}
 		
-//		}
+		const Uint8 *keys = SDL_GetKeyboardState(NULL);
+		if(keys[SDL_SCANCODE_W] && collisionEntityEnvironnement(&guerrier, carte, UP)) {
+			carte->deplacer(UP, guerrier.getVitesse());
+			deplacer(UP, entites);
+		}
 
+		if(keys[SDL_SCANCODE_A] && collisionEntityEnvironnement(&guerrier, carte, LEFT)) {
+			carte->deplacer(LEFT, guerrier.getVitesse());
+			deplacer(LEFT, entites);
+		}
+
+		if(keys[SDL_SCANCODE_S] && collisionEntityEnvironnement(&guerrier, carte, DOWN)) {
+			carte->deplacer(DOWN, guerrier.getVitesse());
+			deplacer(DOWN, entites);
+		}
+
+		if(keys[SDL_SCANCODE_D] && collisionEntityEnvironnement(&guerrier, carte, RIGHT)) {
+			carte->deplacer(RIGHT, guerrier.getVitesse());
+			deplacer(RIGHT, entites);
+		}
+
+		if(keys[SDL_SCANCODE_SPACE] && attaque_melee) {
+			for(unsigned int i = 0; i < entites.size(); i++) {
+				if(collisionPersonnageEntity(entites[i], &guerrier)) {
+					guerrier.attaque(entites[i], 20);
+
+					if(entites[i]->estMort()) {
+						delete entites[i];
+						entites.erase(entites.begin() + i);
+					}
+					break;
+				}
+			}		
+	
+			attaque_melee = false;
+		} else if(!keys[SDL_SCANCODE_SPACE]) {
+			attaque_melee = true;
+		}
+
+//		particle_system.update();
+	
+    		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 		SDL_RenderClear(renderer);
 	
-		carte->afficher(renderer);	
-		guerrier.afficher(renderer);	
-		
+		carte->afficher(renderer);
+		guerrier.afficher(renderer);
+	
+		for(unsigned int i = 0; i < entites.size(); i++) {
+			entites[i]->afficher(renderer);
+		}
+
+//		particle_system.afficher(renderer);		
+	
 		SDL_RenderPresent(renderer);	
 	}
 

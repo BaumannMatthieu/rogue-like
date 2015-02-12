@@ -1,13 +1,21 @@
-#ifndef TILE_H
-#define TILE_H
+#ifndef __TILE_H__
+#define __TILE_H__
 
 #define LARGEUR_TILE 16
 #define HAUTEUR_TILE 16
 
+using namespace std;
+
 class Tile
 {
 	public:
-		Tile(const unsigned int _id_tile, const std::vector< char > _collision)
+		Tile(const unsigned int _id_tile)
+		{
+			id_tile = _id_tile;
+			collision.assign(4, false);
+		}
+
+		Tile(const unsigned int _id_tile, const vector< char > _collision)
 		{
 			collision = _collision;
 			id_tile = _id_tile;
@@ -27,12 +35,22 @@ class Tile
 			id_tile = _id_tile;
 		}
 
-		std::vector< char > getCollisions()
+		std::vector< char > getCollision()
 		{
 			return collision;
 		}
+
+		void setCollision(const std::vector< char > _collision)
+		{
+			collision = _collision;
+		}
+
+		void inverserCollision(const direction dir)
+		{
+			collision[dir] = !collision[dir];
+		}
 	private:
-		std::vector< char > collision;
+		vector< char > collision;
 		unsigned int id_tile;
 };
 
