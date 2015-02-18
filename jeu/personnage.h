@@ -22,6 +22,11 @@ class Personnage : public Entite
 		{
 			
 		}
+		
+		virtual void deplacer_tile(const struct id_tile pos, Carte* carte)
+		{
+				
+		}
 };
 
 #endif

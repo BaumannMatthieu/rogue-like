@@ -57,6 +57,7 @@ class Entite
 		}
 		
 		virtual void deplacer(const direction dir) = 0;
+		virtual void deplacer_tile(const struct id_tile pos, Carte* carte) = 0;
 		
 	protected:
 		Texture* sprite;
@@ -67,6 +68,29 @@ class Entite
 		
 		Uint8 vitesse;
 };
+
+struct id_tile
+{
+	unsigned int x, y;
+};
+
+SDL_Rect ajustementPositionEntity(SDL_Rect pos_dst, Carte* carte)
+{
+	SDL_Rect position_ajustee = {pos_dst.x + LARGEUR_ENTITY/2 - carte->getOffsetX(), pos_dst.y + HAUTEUR_ENTITY/2 - carte->getOffsetY(), pos_dst.w, pos_dst.h};	
+
+	return position_ajustee;
+}
+
+id_tile conversionPositionIdTile(SDL_Rect pos_dst, Carte* carte)
+{
+	pos_dst = ajustementPositionEntity(pos_dst, carte);
+	unsigned int x = (pos_dst.x - (pos_dst.x % LARGEUR_TILE))/LARGEUR_TILE;
+	unsigned int y = (pos_dst.y - (pos_dst.y % HAUTEUR_TILE))/HAUTEUR_TILE;
+	
+	struct id_tile pos_tile = {x, y};
+	cout << x << " " << y << endl;
+	return pos_tile;
+}
 
 class Ennemi : public Entite
 {
@@ -79,13 +103,31 @@ class Ennemi : public Entite
 			pos_dst.h = HAUTEUR_ENTITY;
 
 			vitesse = 4;
+
+			deplacement = false;
 		} 
 
 		virtual ~Ennemi()
 		{
 			
 		}
+			
+		void deplacer_tile(const struct id_tile pos, Carte* carte)
+		{
+			if(pos.x < pos_tile.x) {
+				deplacer(RIGHT);
+			} else if(pos.x > pos_tile.x) {
+				deplacer(LEFT);
+			} else if(pos.y < pos_tile.y) {
+				deplacer(DOWN);
+			} else if(pos.y > pos_tile.y) {
+				deplacer(UP);
+			}
 
+			//mise à jour du champ pos_tile
+			pos_tile = conversionPositionIdTile(pos_dst, carte);
+		}
+		
 		virtual void deplacer(const direction dir)
 		{
 			switch(dir)
@@ -109,8 +151,11 @@ class Ennemi : public Entite
 				default:
 				break;
 			}
-
 		}
+
+	private:
+		bool deplacement;
+		struct id_tile pos_tile;
 };
 
 #endif

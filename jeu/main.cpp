@@ -17,6 +17,7 @@ enum direction{UP, DOWN, RIGHT, LEFT};
 #include "texture.h"
 #include "tile.h"
 #include "carte.h"
+#include "pathfinding.h"
 
 #include "entity.h"
 #include "personnage.h"
@@ -157,7 +158,6 @@ bool collisionPersonnageEntity(Entite* personnage, Entite* entite)
 	}
 
 	return false;
-
 }
 
 // précondition : le joueur a appuyé sur ESPACE
@@ -254,6 +254,9 @@ int main(int argc, char **argv)
 
 	bool continuer = true;
 	bool attaque_melee = true;
+	bool deplacement = false;
+
+	struct id_tile pos = {7, 7};
 	while(continuer)
 	{
 		SDL_Event event;
@@ -261,29 +264,35 @@ int main(int argc, char **argv)
 		while (SDL_PollEvent(&event))
                 {
 			if(event.type == SDL_QUIT) {
-					continuer = false;
+				continuer = false;
 			}
 		}
+
+		entites[0]->deplacer_tile(pos, carte);
 		
 		const Uint8 *keys = SDL_GetKeyboardState(NULL);
 		if(keys[SDL_SCANCODE_W] && collisionEntityEnvironnement(&guerrier, carte, UP)) {
 			carte->deplacer(UP, guerrier.getVitesse());
 			deplacer(UP, entites);
+			deplacement = true;
 		}
 
 		if(keys[SDL_SCANCODE_A] && collisionEntityEnvironnement(&guerrier, carte, LEFT)) {
 			carte->deplacer(LEFT, guerrier.getVitesse());
 			deplacer(LEFT, entites);
+			deplacement = true;
 		}
 
 		if(keys[SDL_SCANCODE_S] && collisionEntityEnvironnement(&guerrier, carte, DOWN)) {
 			carte->deplacer(DOWN, guerrier.getVitesse());
 			deplacer(DOWN, entites);
+			deplacement = true;
 		}
 
 		if(keys[SDL_SCANCODE_D] && collisionEntityEnvironnement(&guerrier, carte, RIGHT)) {
 			carte->deplacer(RIGHT, guerrier.getVitesse());
 			deplacer(RIGHT, entites);
+			deplacement = true;
 		}
 
 		if(keys[SDL_SCANCODE_SPACE] && attaque_melee) {
